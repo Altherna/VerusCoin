@@ -5886,12 +5886,6 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             }
         }
     }
-
-    if (!success)
-    {
-        // remove coinbase and anything that depended on it sooner, rather than later
-        RemoveCoinbaseFromMemPool(block);
-    }
     return success;
 }
 
@@ -6025,6 +6019,8 @@ bool ContextualCheckBlock(
         // this is the only place where a duplicate name definition of the same name is checked in a block
         // all other cases are covered via mempool and pre-registered check, doing this would require a malicious
         // client, so immediate ban score
+        //
+        // TODO: HARDENING for PBaaS - add id/currency import/export verification
         CNameReservation nameRes(tx);
         if (nameRes.IsValid())
         {

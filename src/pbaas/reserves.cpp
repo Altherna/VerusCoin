@@ -230,7 +230,10 @@ bool CCrossChainExport::GetExportInfo(const CTransaction &exportTx,
 
     if (IsSameChain() && !IsChainDefinition())
     {
-        if (IsClearLaunch() || !IsPrelaunch())
+        // checking sourceHeightEnd being creater than 1 ensures that we can legitimately
+        // expect an export finalization to follow
+        // TODO: HARDENING - confirm that we leave no issue with an adversarially constructed export with sourceHeightEnd of 1
+        if (IsClearLaunch() || (!IsPrelaunch() && sourceHeightEnd > 1))
         {
             numOutput++;
             COptCCParams p;
@@ -839,7 +842,7 @@ CCurrencyValueMap CCrossChainImport::GetBestPriorConversions(const CTransaction 
                 for (auto &onePrice : priorConversionMap.valueMap)
                 {
                     int64_t curVal = retVal.valueMap[onePrice.first];
-                    if ((!curVal || curVal < onePrice.second) && onePrice.second)
+                    if ((!curVal || curVal > onePrice.second) && onePrice.second)
                     {
                         retVal.valueMap[onePrice.first] = onePrice.second;
                     }
@@ -2211,6 +2214,7 @@ CReserveTransactionDescriptor::CReserveTransactionDescriptor(const CTransaction 
                         flags |= IS_REJECT;
                         return;
                     }
+                    flags |= IS_RESERVETRANSFER;
                     AddReserveTransfer(rt);
                 }
                 break;
@@ -3089,7 +3093,7 @@ bool CReserveTransactionDescriptor::AddReserveTransferImportOutputs(const CCurre
 
         if (!currencyDest.IsValid())
         {
-            printf("%s: invalid currency or currency not found %s\n", __func__, EncodeDestination(CIdentityID(curTransfer.destCurrencyID)).c_str());
+            printf("%s: invalid currency or currency not found %s\n", __func__, curTransfer.ToUniValue().write(1,2).c_str());
             LogPrintf("%s: invalid currency or currency not found %s\n", __func__, EncodeDestination(CIdentityID(curTransfer.destCurrencyID)).c_str());
             return false;
         }
